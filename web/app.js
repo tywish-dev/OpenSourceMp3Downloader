@@ -20,6 +20,24 @@ function apiUrl(path) {
   return `${apiBase()}${path}`;
 }
 
+function needsRemoteApi() {
+  return /\.(vercel\.app|vercel\.sh)$/i.test(window.location.hostname);
+}
+
+function missingRemoteApi() {
+  return needsRemoteApi() && !apiBase();
+}
+
+function describeHttpError(response, fallback) {
+  if (response.status === 404) {
+    if (needsRemoteApi()) {
+      return "API 404: this Vercel site has no /api. Set OSMP3_API_BASE to your Northflank public https://…code.run URL (no trailing slash), then Redeploy.";
+    }
+    return "API 404: /api/info was not found on this host. Open the Northflank public URL or point OSMP3_API_BASE at it.";
+  }
+  return fallback;
+}
+
 function selectedBitrate() {
   const picked = document.querySelector('input[name="bitrate"]:checked');
   return Number(picked ? picked.value : 192);
@@ -70,22 +88,33 @@ async function readError(response) {
   } catch {
     /* fall through */
   }
-  return `Request failed (${response.status})`;
+  return describeHttpError(response, `Request failed (${response.status})`);
 }
 
+const apiTarget = document.getElementById("api-target");
 if (healthLink) {
   healthLink.href = apiUrl("/health");
 }
+if (apiTarget) {
+  apiTarget.textContent = apiBase() ? `API ${apiBase()}` : "API (same origin)";
+}
 
-if (!apiBase() && /vercel\.app$/i.test(window.location.hostname)) {
+if (missingRemoteApi()) {
   setStatus(
-    "This Vercel site has no API URL yet. Set OSMP3_API_BASE to your Koyeb (or other) backend URL.",
+    "Vercel is only the UI. Set OSMP3_API_BASE to the Northflank public URL (https://….code.run, no trailing slash), then Redeploy.",
     true,
   );
 }
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (missingRemoteApi()) {
+    setStatus(
+      "Vercel is only the UI. Set OSMP3_API_BASE to the Northflank public URL, then Redeploy.",
+      true,
+    );
+    return;
+  }
   const url = urlInput.value.trim();
   inspectedUrl = "";
   downloadBtn.disabled = true;
