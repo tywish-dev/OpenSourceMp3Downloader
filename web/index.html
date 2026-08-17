@@ -50,6 +50,20 @@
         </div>
 
         <form id="extract-form" novalidate>
+          <label for="api-base">Northflank API URL</label>
+          <div class="api-row">
+            <input
+              id="api-base"
+              name="api-base"
+              type="url"
+              inputmode="url"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="https://http--osmp3--project--user.code.run"
+            />
+            <button type="button" id="save-api">Save</button>
+          </div>
+
           <label for="url">Media URL</label>
           <input
             id="url"

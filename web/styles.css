@@ -186,6 +186,23 @@ input[type="url"] {
   margin-bottom: 1rem;
 }
 
+.api-row {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.api-row input[type="url"] {
+  margin-bottom: 0;
+}
+
+#save-api {
+  background: transparent;
+  color: var(--paper);
+  border: 1px solid var(--line);
+  white-space: nowrap;
+}
+
 input[type="url"]:focus {
   outline: 2px solid var(--copper);
   outline-offset: 2px;

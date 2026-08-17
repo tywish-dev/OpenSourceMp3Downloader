@@ -1,5 +1,7 @@
 const form = document.getElementById("extract-form");
 const urlInput = document.getElementById("url");
+const apiBaseInput = document.getElementById("api-base");
+const saveApiBtn = document.getElementById("save-api");
 const inspectBtn = document.getElementById("inspect-btn");
 const downloadBtn = document.getElementById("download-btn");
 const statusEl = document.getElementById("status");
@@ -9,11 +11,27 @@ const durationEl = document.getElementById("duration");
 const extractorEl = document.getElementById("extractor-name");
 const thumbEl = document.getElementById("thumb");
 const healthLink = document.getElementById("health-link");
+const apiTarget = document.getElementById("api-target");
 
+const API_STORAGE_KEY = "osmp3-api-base";
 let inspectedUrl = "";
 
+function normalizeApiBase(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\/+$/, "");
+}
+
+function storedApiBase() {
+  try {
+    return normalizeApiBase(localStorage.getItem(API_STORAGE_KEY));
+  } catch {
+    return "";
+  }
+}
+
 function apiBase() {
-  return String(window.OSMP3_API_BASE || "").replace(/\/$/, "");
+  return storedApiBase() || normalizeApiBase(window.OSMP3_API_BASE);
 }
 
 function apiUrl(path) {
@@ -28,12 +46,19 @@ function missingRemoteApi() {
   return needsRemoteApi() && !apiBase();
 }
 
+function refreshApiChrome() {
+  if (healthLink) {
+    healthLink.href = apiUrl("/health");
+  }
+  if (apiTarget) {
+    const base = apiBase();
+    apiTarget.textContent = base ? `API ${base}` : "API (same origin)";
+  }
+}
+
 function describeHttpError(response, fallback) {
   if (response.status === 404) {
-    if (needsRemoteApi()) {
-      return "API 404: this Vercel site has no /api. Set OSMP3_API_BASE to your Northflank public https://…code.run URL (no trailing slash), then Redeploy.";
-    }
-    return "API 404: /api/info was not found on this host. Open the Northflank public URL or point OSMP3_API_BASE at it.";
+    return "API 404: this host has no /api. Paste your Northflank public https://…code.run URL above and click Save.";
   }
   return fallback;
 }
@@ -91,26 +116,55 @@ async function readError(response) {
   return describeHttpError(response, `Request failed (${response.status})`);
 }
 
-const apiTarget = document.getElementById("api-target");
-if (healthLink) {
-  healthLink.href = apiUrl("/health");
+function saveApiBaseFromInput() {
+  const value = normalizeApiBase(apiBaseInput.value);
+  try {
+    if (value) {
+      localStorage.setItem(API_STORAGE_KEY, value);
+    } else {
+      localStorage.removeItem(API_STORAGE_KEY);
+    }
+  } catch {
+    setStatus("Could not save the API URL in this browser.", true);
+    return false;
+  }
+  refreshApiChrome();
+  if (!value && needsRemoteApi()) {
+    setStatus(
+      "Paste the Northflank public URL (https://….code.run, no trailing slash) and Save.",
+      true,
+    );
+    return false;
+  }
+  setStatus(value ? `API set to ${value}` : "API cleared; using this site.");
+  return true;
 }
-if (apiTarget) {
-  apiTarget.textContent = apiBase() ? `API ${apiBase()}` : "API (same origin)";
+
+if (apiBaseInput) {
+  apiBaseInput.value = apiBase();
+}
+refreshApiChrome();
+if (saveApiBtn) {
+  saveApiBtn.addEventListener("click", () => {
+    saveApiBaseFromInput();
+  });
 }
 
 if (missingRemoteApi()) {
   setStatus(
-    "Vercel is only the UI. Set OSMP3_API_BASE to the Northflank public URL (https://….code.run, no trailing slash), then Redeploy.",
+    "Paste your Northflank public URL in the API field (https://….code.run) and click Save. Then Inspect.",
     true,
   );
 }
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (apiBaseInput && apiBaseInput.value.trim()) {
+    saveApiBaseFromInput();
+  }
   if (missingRemoteApi()) {
     setStatus(
-      "Vercel is only the UI. Set OSMP3_API_BASE to the Northflank public URL, then Redeploy.",
+      "Paste your Northflank public URL in the API field and click Save first.",
       true,
     );
     return;
@@ -151,7 +205,7 @@ form.addEventListener("submit", async (event) => {
       error.name === "TypeError" || /failed to fetch|networkerror/i.test(message);
     setStatus(
       likelyCold
-        ? `${message} If the API just woke up, wait a few seconds and try again.`
+        ? `${message} Check the API URL, that Northflank HTTP is public/active, and /health returns ok.`
         : message,
       true,
     );
