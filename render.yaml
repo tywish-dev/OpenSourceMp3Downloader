@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=https://render.com/schema/render.yaml.json
+services:
+  - type: web
+    name: osmp3
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: OSMP3_MAX_CONCURRENT
+        value: "1"
+      - key: OSMP3_RATE_LIMIT
+        value: "6"
+      - key: OSMP3_CORS_ORIGINS
+        value: "*"
