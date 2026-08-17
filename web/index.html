@@ -8,14 +8,14 @@
       name="description"
       content="Self-hosted, open-source audio extractor. Paste a URL you have the right to copy, get an MP3 back. MIT licensed."
     />
-    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,640&family=IBM+Plex+Mono:wght@400;500&family=Outfit:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
     <a class="skip" href="#composer">Skip to extractor</a>
@@ -107,7 +107,7 @@
           <span>03</span>
           <h2>ffmpeg writes an MP3</h2>
           <p>
-            The file is streamed back to your browser, then deleted. Render’s
+            The file is streamed back to your browser, then deleted. The API
             disk is ephemeral; we do not keep a library of other people’s media.
           </p>
         </article>
@@ -139,9 +139,10 @@ docker run --rm -p 10000:10000 -e PORT=10000 osmp3</code></pre>
         ·
         <a href="https://github.com/tywish-dev/OpenSourceMp3Downloader">Source</a>
         ·
-        <a href="/health">Health</a>
+        <a id="health-link" href="/health">Health</a>
       </p>
     </footer>
-    <script src="/static/app.js"></script>
+    <script src="/config.js"></script>
+    <script src="/app.js"></script>
   </body>
 </html>

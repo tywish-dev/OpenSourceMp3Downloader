@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "echo skipped",
+  "buildCommand": "node web/inject-config.mjs",
+  "outputDirectory": "web"
+}

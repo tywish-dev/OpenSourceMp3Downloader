@@ -8,8 +8,17 @@ const titleEl = document.getElementById("title");
 const durationEl = document.getElementById("duration");
 const extractorEl = document.getElementById("extractor-name");
 const thumbEl = document.getElementById("thumb");
+const healthLink = document.getElementById("health-link");
 
 let inspectedUrl = "";
+
+function apiBase() {
+  return String(window.OSMP3_API_BASE || "").replace(/\/$/, "");
+}
+
+function apiUrl(path) {
+  return `${apiBase()}${path}`;
+}
 
 function selectedBitrate() {
   const picked = document.querySelector('input[name="bitrate"]:checked');
@@ -64,6 +73,17 @@ async function readError(response) {
   return `Request failed (${response.status})`;
 }
 
+if (healthLink) {
+  healthLink.href = apiUrl("/health");
+}
+
+if (!apiBase() && /vercel\.app$/i.test(window.location.hostname)) {
+  setStatus(
+    "This Vercel site has no API URL yet. Set OSMP3_API_BASE to your Koyeb (or other) backend URL.",
+    true,
+  );
+}
+
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   const url = urlInput.value.trim();
@@ -74,7 +94,7 @@ form.addEventListener("submit", async (event) => {
   setStatus("Reading the source…");
 
   try {
-    const response = await fetch("/api/info", {
+    const response = await fetch(apiUrl("/api/info"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url }),
@@ -97,7 +117,15 @@ form.addEventListener("submit", async (event) => {
     card.hidden = false;
     setStatus("Looks good. Download when you are ready.");
   } catch (error) {
-    setStatus(error.message || "Could not inspect that URL.", true);
+    const message = error.message || "Could not inspect that URL.";
+    const likelyCold =
+      error.name === "TypeError" || /failed to fetch|networkerror/i.test(message);
+    setStatus(
+      likelyCold
+        ? `${message} If the API just woke up, wait a few seconds and try again.`
+        : message,
+      true,
+    );
   } finally {
     setBusy(false);
   }
@@ -110,7 +138,7 @@ downloadBtn.addEventListener("click", async () => {
   setBusy(true);
   setStatus("Extracting audio. This can take a bit…");
   try {
-    const response = await fetch("/api/download", {
+    const response = await fetch(apiUrl("/api/download"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

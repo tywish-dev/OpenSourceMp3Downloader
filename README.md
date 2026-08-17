@@ -4,6 +4,22 @@ A self-hosted website that turns a **public media URL you have the right to copy
 
 This is not a search engine, not a song locker, and not a hosted ripping service for other people’s catalogs. You run it. You are responsible for what you fetch.
 
+## How it is published
+
+The UI is a static site. The extractor is a Docker API. They can run together locally, or split:
+
+```text
+Vercel (web/)  --HTTPS-->  Koyeb Docker API (yt-dlp + ffmpeg)
+```
+
+**Frontend: Vercel.** Static files, no sleep, global CDN.
+
+**Backend: [Koyeb](https://www.koyeb.com/) free instance.** This is the default recommendation. Render’s free web service sleeps after 15 minutes and can take a long time to boot (a minute is common; several minutes happens). Koyeb’s free instance stays warm for an hour of idle time, then wakes in about **1–5 seconds**.
+
+If you need a process that **never** sleeps, use [Northflank](https://northflank.com/) Sandbox (always-on, 2 free services, card required to activate). Google Cloud Run is also strong (fast cold starts, long request timeouts) but needs a GCP billing account.
+
+Do not put yt-dlp + ffmpeg on Vercel. The converter is a container job, not a static page.
+
 ## How it works
 
 ```text
@@ -11,10 +27,10 @@ Browser  →  FastAPI  →  yt-dlp (find audio)  →  ffmpeg (write MP3)  →  d
                          \__ metadata only on Inspect
 ```
 
-1. The UI is a static page served by FastAPI (`app/static`).
+1. The UI lives in `web/` (Vercel, or bundled with the API for self-host).
 2. `POST /api/info` asks yt-dlp for title, duration, and thumbnail. Nothing is saved.
 3. `POST /api/download` extracts best audio, transcodes to 128 / 192 / 320 kbps MP3, and streams the file.
-4. A background task deletes the temp directory. Render’s filesystem is ephemeral anyway; we do not keep a media library.
+4. A background task deletes the temp directory. We do not keep a media library.
 
 Guards in front of yt-dlp:
 
@@ -24,9 +40,7 @@ Guards in front of yt-dlp:
 - 45-minute duration cap
 - In-memory rate limit and a small concurrent-job cap
 
-## Quick start (Docker)
-
-You need Docker. ffmpeg is bundled in the image.
+## Quick start (Docker, UI + API together)
 
 ```bash
 docker build -t osmp3 .
@@ -49,27 +63,47 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 10000
 pytest
 ```
 
-## Deploy on Render
+## Deploy the frontend on Vercel
 
-`render.yaml` describes a free Docker web service that binds to `0.0.0.0:$PORT` and health-checks `/health`.
+Import this GitHub repo. `vercel.json` publishes the `web/` folder.
 
-1. Merge this repo (or the PR) to GitHub
-2. Open the Blueprint: [Apply on Render](https://dashboard.render.com/blueprint/new?repo=https://github.com/tywish-dev/OpenSourceMp3Downloader)
-3. Apply the Blueprint and wait for the deploy
+1. [vercel.com/new](https://vercel.com/new) → this repository
+2. After the API is live, set the Vercel env var `OSMP3_API_BASE` to the Koyeb URL, **no trailing slash** (example: `https://osmp3-yourname.koyeb.app`)
+3. Redeploy so `web/inject-config.mjs` writes that origin into `config.js`
 
-Free instances spin down after idle time and have a tight memory budget. If large conversions die, bump the plan and keep `OSMP3_MAX_CONCURRENT=1`.
+The browser calls the API directly (CORS). Downloads do **not** proxy through Vercel, so large MP3s are not capped by Vercel’s function body limits.
 
-| Variable | Default | Meaning |
+## Deploy the API on Koyeb
+
+[![Deploy to Koyeb](https://www.koyeb.com/static/images/deploy/button.svg)](https://app.koyeb.com/deploy?type=git&builder=dockerfile&repository=github.com/tywish-dev/OpenSourceMp3Downloader&branch=main&name=osmp3&instance_type=free&env%5BOSMP3_MAX_CONCURRENT%5D=1&env%5BOSMP3_RATE_LIMIT%5D=6&env%5BOSMP3_CORS_ORIGINS%5D=*)
+
+Or by hand:
+
+1. Create a Koyeb account and connect GitHub
+2. New App → this repo → **Dockerfile** builder → **Free** instance (Frankfurt or Washington)
+3. Health check path: `/health`
+4. Set env:
+
+| Variable | Suggested | Meaning |
 | --- | --- | --- |
-| `PORT` | set by Render | HTTP port |
-| `OSMP3_MAX_CONCURRENT` | `2` locally, `1` on Render | Parallel conversions |
-| `OSMP3_RATE_LIMIT` | `8` locally, `6` on Render | Requests per IP per minute |
+| `PORT` | set by Koyeb | HTTP port (`0.0.0.0:$PORT`) |
+| `OSMP3_MAX_CONCURRENT` | `1` | Parallel conversions |
+| `OSMP3_RATE_LIMIT` | `6` | Requests per IP per minute |
+| `OSMP3_CORS_ORIGINS` | `*` then lock it | Allowed browser origins |
+
+After the Vercel URL exists, change `OSMP3_CORS_ORIGINS` from `*` to that origin, for example `https://osmp3.vercel.app`.
+
+Free Koyeb is 0.1 vCPU / 512 MB, so conversions can be slow. Idle sleep is **1 hour**, then a **1–5 s** wake — not a multi-minute Render boot.
+
+### Always-on alternative: Northflank
+
+[Northflank Sandbox](https://northflank.com/) keeps two services running with no sleep. Deploy the same Dockerfile, expose HTTP, health path `/health`, same env vars. A card is required to activate the sandbox; it is not billed while you stay on the free services.
 
 ## API
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/` | Website |
+| `GET` | `/` | Website (when UI is bundled) |
 | `GET` | `/health` | Liveness (`ok`, `ffmpeg`, `active_jobs`) |
 | `POST` | `/api/info` | `{ "url": "https://..." }` → title, duration, thumbnail |
 | `POST` | `/api/download` | `{ "url": "...", "bitrate": 192 }` → `audio/mpeg` file |
@@ -82,8 +116,8 @@ OSMP3 is a tool. Use it only with recordings you own, Creative Commons / public-
 
 - Python 3.12, FastAPI, uvicorn
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp) + ffmpeg
-- Vanilla HTML / CSS / JS (no frontend build)
-- Docker on Render
+- Vanilla HTML / CSS / JS in `web/` (Vercel)
+- Docker API on Koyeb (or any container host)
 
 ## License
 

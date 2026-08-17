@@ -1,4 +1,4 @@
-"""HTTP API and static site for the self-hosted MP3 extractor."""
+"""HTTP API and optional bundled UI for the self-hosted MP3 extractor."""
 
 from __future__ import annotations
 
@@ -10,7 +10,8 @@ from threading import Lock
 from typing import Deque
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from starlette.background import BackgroundTask
@@ -25,17 +26,32 @@ from app.extractor import (
 )
 from app.security import UnsafeURLError, validate_media_url
 
-STATIC_DIR = Path(__file__).resolve().parent / "static"
+WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 MAX_CONCURRENT_JOBS = int(os.environ.get("OSMP3_MAX_CONCURRENT", "2"))
 RATE_LIMIT_WINDOW_SECONDS = 60
 RATE_LIMIT_MAX_REQUESTS = int(os.environ.get("OSMP3_RATE_LIMIT", "8"))
+
+
+def _cors_origins() -> list[str]:
+    raw = os.environ.get("OSMP3_CORS_ORIGINS", "*").strip()
+    if raw == "*":
+        return ["*"]
+    return [origin.strip() for origin in raw.split(",") if origin.strip()]
+
 
 app = FastAPI(
     title="Open Source MP3 Downloader",
     description="Self-hosted extractor. Download only media you have the right to copy.",
     version="0.1.0",
 )
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_cors_origins(),
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type"],
+    expose_headers=["Content-Disposition"],
+)
 
 _job_lock = Lock()
 _active_jobs = 0
@@ -99,9 +115,9 @@ def health() -> dict[str, object]:
     }
 
 
-@app.get("/", response_class=HTMLResponse)
-def index() -> HTMLResponse:
-    return HTMLResponse((STATIC_DIR / "index.html").read_text(encoding="utf-8"))
+@app.get("/")
+def index() -> FileResponse:
+    return FileResponse(WEB_DIR / "index.html")
 
 
 @app.post("/api/info")
@@ -159,3 +175,6 @@ def download(payload: DownloadPayload, request: Request) -> FileResponse:
 def _cleanup_workspace(workspace) -> None:
     workspace.cleanup()
     _release_job()
+
+
+app.mount("/", StaticFiles(directory=WEB_DIR), name="web")

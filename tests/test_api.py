@@ -15,6 +15,27 @@ def test_home_page_renders():
     assert "Extractor" in response.text
 
 
+def test_frontend_assets_are_served():
+    css = client.get("/styles.css")
+    js = client.get("/app.js")
+    assert css.status_code == 200
+    assert "font-family" in css.text
+    assert js.status_code == 200
+
+
+def test_cors_preflight_allows_browser():
+    response = client.options(
+        "/api/info",
+        headers={
+            "Origin": "https://osmp3.vercel.app",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+        },
+    )
+    assert response.status_code in {200, 204}
+    assert response.headers.get("access-control-allow-origin") == "*"
+
+
 def test_health_ok():
     response = client.get("/health")
     assert response.status_code == 200

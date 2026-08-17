@@ -14,3 +14,5 @@ services:
         value: "1"
       - key: OSMP3_RATE_LIMIT
         value: "6"
+      - key: OSMP3_CORS_ORIGINS
+        value: "*"

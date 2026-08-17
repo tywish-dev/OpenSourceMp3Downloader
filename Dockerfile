@@ -15,6 +15,7 @@ COPY --from=builder /wheels /wheels
 COPY requirements.txt .
 RUN pip install --no-cache-dir /wheels/* && rm -rf /wheels
 COPY app ./app
+COPY web ./web
 RUN chown -R appuser:appuser /app
 USER appuser
 ENV PORT=10000 PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
