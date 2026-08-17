@@ -120,6 +120,11 @@ def index() -> FileResponse:
     return FileResponse(WEB_DIR / "index.html")
 
 
+@app.get("/favicon.ico")
+def favicon() -> FileResponse:
+    return FileResponse(WEB_DIR / "favicon.svg", media_type="image/svg+xml")
+
+
 @app.post("/api/info")
 def media_info(payload: UrlPayload, request: Request) -> dict[str, object]:
     _enforce_rate_limit(request)
