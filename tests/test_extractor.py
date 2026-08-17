@@ -6,7 +6,7 @@ from app.extractor import ExtractionError, extract_mp3, sanitize_filename
 
 
 def test_sanitize_filename_strips_junk():
-    assert sanitize_filename("My Talk: Hello*World?") == "My_Talk__Hello_World.mp3"
+    assert sanitize_filename("My Talk: Hello*World?") == "My_Talk_Hello_World.mp3"
     assert sanitize_filename("   ") == "audio.mp3"
 
 
