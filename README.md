@@ -65,13 +65,15 @@ pytest
 
 ## Deploy the frontend on Vercel
 
-Import this GitHub repo. `vercel.json` publishes the `web/` folder.
+Import this GitHub repo (`main`). `vercel.json` publishes `web/` and adds `/api/info`, `/api/download`, and `/health` proxies.
 
-1. [vercel.com/new](https://vercel.com/new) → this repository
-2. After the API is live, set the Vercel env var `OSMP3_API_BASE` to the Koyeb URL, **no trailing slash** (example: `https://osmp3-yourname.koyeb.app`)
-3. Redeploy so `web/inject-config.mjs` writes that origin into `config.js`
+1. [vercel.com/new](https://vercel.com/new) → this repository, production branch `main`
+2. **Settings → Environment Variables** → `OSMP3_API_BASE` = Northflank public URL, **no trailing slash**  
+   Example: `https://http--osmp3--yourproject--user.code.run`  
+   Enable **Production** (and Preview if you want)
+3. **Deployments → Redeploy** (do not skip the build)
 
-The browser calls the API directly (CORS). Downloads do **not** proxy through Vercel, so large MP3s are not capped by Vercel’s function body limits.
+After that, Inspect on the Vercel site hits `/api` on Vercel, which forwards to Northflank. You can also paste the Northflank URL into the page’s API field.
 
 ## Deploy the API on Koyeb
 

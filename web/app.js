@@ -42,10 +42,6 @@ function needsRemoteApi() {
   return /\.(vercel\.app|vercel\.sh)$/i.test(window.location.hostname);
 }
 
-function missingRemoteApi() {
-  return needsRemoteApi() && !apiBase();
-}
-
 function refreshApiChrome() {
   if (healthLink) {
     healthLink.href = apiUrl("/health");
@@ -58,7 +54,10 @@ function refreshApiChrome() {
 
 function describeHttpError(response, fallback) {
   if (response.status === 404) {
-    return "API 404: this host has no /api. Paste your Northflank public https://…code.run URL above and click Save.";
+    return "Vercel /api 404: wait for the latest deploy, or paste the Northflank https://…code.run URL above and Save.";
+  }
+  if (response.status === 503) {
+    return fallback;
   }
   return fallback;
 }
@@ -129,14 +128,7 @@ function saveApiBaseFromInput() {
     return false;
   }
   refreshApiChrome();
-  if (!value && needsRemoteApi()) {
-    setStatus(
-      "Paste the Northflank public URL (https://….code.run, no trailing slash) and Save.",
-      true,
-    );
-    return false;
-  }
-  setStatus(value ? `API set to ${value}` : "API cleared; using this site.");
+  setStatus(value ? `API set to ${value}` : "API cleared; this Vercel site will proxy /api if OSMP3_API_BASE is set.");
   return true;
 }
 
@@ -150,10 +142,9 @@ if (saveApiBtn) {
   });
 }
 
-if (missingRemoteApi()) {
+if (needsRemoteApi() && !apiBase()) {
   setStatus(
-    "Paste your Northflank public URL in the API field (https://….code.run) and click Save. Then Inspect.",
-    true,
+    "Leave the API field empty to use Vercel /api (set OSMP3_API_BASE in Vercel), or paste your Northflank https://….code.run URL and Save.",
   );
 }
 
@@ -161,13 +152,6 @@ form.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (apiBaseInput && apiBaseInput.value.trim()) {
     saveApiBaseFromInput();
-  }
-  if (missingRemoteApi()) {
-    setStatus(
-      "Paste your Northflank public URL in the API field and click Save first.",
-      true,
-    );
-    return;
   }
   const url = urlInput.value.trim();
   inspectedUrl = "";
