@@ -1,6 +1,6 @@
-const { proxyJson } = require("../lib/osmp3-backend");
+const { proxyToBackend, withHandler } = require("./_backend");
 
-module.exports = async function handler(req, res) {
+module.exports = withHandler(async function info(req, res) {
   if (req.method === "OPTIONS") {
     res.status(204).end();
     return;
@@ -9,5 +9,5 @@ module.exports = async function handler(req, res) {
     res.status(405).json({ detail: "Use POST /api/info" });
     return;
   }
-  await proxyJson(req, res, "/api/info");
-};
+  await proxyToBackend(req, res, "/api/info");
+});

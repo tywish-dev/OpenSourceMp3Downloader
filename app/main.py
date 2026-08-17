@@ -130,6 +130,11 @@ def media_info(payload: UrlPayload, request: Request) -> dict[str, object]:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except ExtractionError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Extractor failed: {exc}",
+        ) from exc
 
     return {
         "title": info.title,
@@ -159,10 +164,13 @@ def download(payload: DownloadPayload, request: Request) -> FileResponse:
         workspace.cleanup()
         _release_job()
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-    except Exception:
+    except Exception as exc:
         workspace.cleanup()
         _release_job()
-        raise
+        raise HTTPException(
+            status_code=502,
+            detail=f"Extractor failed: {exc}",
+        ) from exc
 
     return FileResponse(
         path=mp3_path,

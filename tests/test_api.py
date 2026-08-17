@@ -62,6 +62,17 @@ def test_download_rejects_bad_bitrate(monkeypatch):
     assert response.status_code == 400
 
 
+def test_info_maps_unexpected_errors(monkeypatch):
+    def boom(_url: str):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr("app.main.validate_media_url", lambda url: url)
+    monkeypatch.setattr("app.main.probe_media", boom)
+    response = client.post("/api/info", json={"url": "https://example.com/talk"})
+    assert response.status_code == 502
+    assert "boom" in response.json()["detail"]
+
+
 def test_info_returns_probe_payload(monkeypatch):
     monkeypatch.setattr(
         "app.main.validate_media_url",
