@@ -18,4 +18,4 @@ tests
 .DS_Store
 tmp
 *.log
-web/inject-config.mjs
+scripts

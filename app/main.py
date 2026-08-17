@@ -26,7 +26,7 @@ from app.extractor import (
 )
 from app.security import UnsafeURLError, validate_media_url
 
-WEB_DIR = Path(__file__).resolve().parent.parent / "web"
+WEB_DIR = Path(__file__).resolve().parent.parent / "public"
 MAX_CONCURRENT_JOBS = int(os.environ.get("OSMP3_MAX_CONCURRENT", "2"))
 RATE_LIMIT_WINDOW_SECONDS = 60
 RATE_LIMIT_MAX_REQUESTS = int(os.environ.get("OSMP3_RATE_LIMIT", "8"))

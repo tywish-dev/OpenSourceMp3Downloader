@@ -1,9 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": null,
-  "installCommand": "echo skipped",
-  "buildCommand": "node web/inject-config.mjs",
-  "outputDirectory": "web",
+  "buildCommand": "node scripts/inject-config.mjs",
   "functions": {
     "api/info.js": {
       "maxDuration": 60

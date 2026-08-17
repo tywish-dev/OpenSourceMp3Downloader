@@ -9,7 +9,7 @@ This is not a search engine, not a song locker, and not a hosted ripping service
 The UI is a static site. The extractor is a Docker API. They can run together locally, or split:
 
 ```text
-Vercel (web/)  --HTTPS-->  Koyeb Docker API (yt-dlp + ffmpeg)
+Vercel (public/ + /api proxy)  --HTTPS-->  Northflank Docker API (yt-dlp + ffmpeg)
 ```
 
 **Frontend: Vercel.** Static files, no sleep, global CDN.
@@ -27,7 +27,7 @@ Browser  →  FastAPI  →  yt-dlp (find audio)  →  ffmpeg (write MP3)  →  d
                          \__ metadata only on Inspect
 ```
 
-1. The UI lives in `web/` (Vercel, or bundled with the API for self-host).
+1. The UI lives in `public/` (Vercel, or bundled with the API for self-host).
 2. `POST /api/info` asks yt-dlp for title, duration, and thumbnail. Nothing is saved.
 3. `POST /api/download` extracts best audio, transcodes to 128 / 192 / 320 kbps MP3, and streams the file.
 4. A background task deletes the temp directory. We do not keep a media library.
@@ -65,7 +65,9 @@ pytest
 
 ## Deploy the frontend on Vercel
 
-Import this GitHub repo (`main`). `vercel.json` publishes `web/` and adds `/api/info`, `/api/download`, and `/health` proxies.
+Import this GitHub repo (`main`). Static files are in `public/`; Vercel Functions in `api/` proxy to Northflank.
+
+In Vercel **Settings → General → Build & Development**, leave **Output Directory empty** (do not set `web`). A custom output folder publishes only HTML and drops `/api`.
 
 1. [vercel.com/new](https://vercel.com/new) → this repository, production branch `main`
 2. **Settings → Environment Variables** → `OSMP3_API_BASE` = Northflank public URL, **no trailing slash**  
@@ -118,7 +120,7 @@ OSMP3 is a tool. Use it only with recordings you own, Creative Commons / public-
 
 - Python 3.12, FastAPI, uvicorn
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp) + ffmpeg
-- Vanilla HTML / CSS / JS in `web/` (Vercel)
+- Vanilla HTML / CSS / JS in `public/` (Vercel Functions in `api/`)
 - Docker API on Koyeb (or any container host)
 
 ## License
