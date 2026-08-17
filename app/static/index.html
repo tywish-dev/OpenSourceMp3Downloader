@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OSMP3 — Open Source MP3 Downloader</title>
+    <meta
+      name="description"
+      content="Self-hosted, open-source audio extractor. Paste a URL you have the right to copy, get an MP3 back. MIT licensed."
+    />
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,640&family=IBM+Plex+Mono:wght@400;500&family=Outfit:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <a class="skip" href="#composer">Skip to extractor</a>
+    <div class="grain" aria-hidden="true"></div>
+    <header class="top">
+      <a class="mark" href="/">
+        <span class="reel" aria-hidden="true"></span>
+        OSMP3
+      </a>
+      <nav>
+        <a href="#how">How it works</a>
+        <a href="#self-host">Self-host</a>
+        <a href="https://github.com/tywish-dev/OpenSourceMp3Downloader">GitHub</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <p class="kicker">Open source · MIT · Self-hosted</p>
+        <h1>Take the audio. Leave the platform.</h1>
+        <p class="lede">
+          OSMP3 is a small web app you run yourself. Paste a public media URL you
+          have the right to copy, inspect it, and pull a clean MP3. No account,
+          no ads, no cloud locker — the file never stays on the server.
+        </p>
+      </section>
+
+      <section id="composer" class="deck" aria-labelledby="composer-title">
+        <div class="deck-head">
+          <h2 id="composer-title">Extractor</h2>
+          <p>Only download media you own or have permission to copy.</p>
+        </div>
+
+        <form id="extract-form" novalidate>
+          <label for="url">Media URL</label>
+          <input
+            id="url"
+            name="url"
+            type="url"
+            inputmode="url"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="https://example.com/talk-you-recorded.mp4"
+            required
+          />
+
+          <fieldset class="bitrates">
+            <legend>MP3 bitrate</legend>
+            <label><input type="radio" name="bitrate" value="128" /> 128</label>
+            <label><input type="radio" name="bitrate" value="192" checked /> 192</label>
+            <label><input type="radio" name="bitrate" value="320" /> 320</label>
+          </fieldset>
+
+          <div class="actions">
+            <button type="submit" id="inspect-btn">Inspect</button>
+            <button type="button" id="download-btn" disabled>Download MP3</button>
+          </div>
+        </form>
+
+        <p id="status" class="status" role="status" aria-live="polite"></p>
+        <article id="card" class="card" hidden>
+          <img id="thumb" alt="" />
+          <div>
+            <p class="card-kicker" id="extractor-name"></p>
+            <h3 id="title"></h3>
+            <p id="duration"></p>
+          </div>
+        </article>
+      </section>
+
+      <section id="how" class="grid">
+        <article>
+          <span>01</span>
+          <h2>You paste a URL</h2>
+          <p>
+            The server only accepts public http(s) addresses. Private networks,
+            localhost, and credentialed URLs are rejected.
+          </p>
+        </article>
+        <article>
+          <span>02</span>
+          <h2>yt-dlp finds the audio</h2>
+          <p>
+            Metadata is read first so you can confirm the title and length.
+            Clips longer than 45 minutes are refused.
+          </p>
+        </article>
+        <article>
+          <span>03</span>
+          <h2>ffmpeg writes an MP3</h2>
+          <p>
+            The file is streamed back to your browser, then deleted. Render’s
+            disk is ephemeral; we do not keep a library of other people’s media.
+          </p>
+        </article>
+      </section>
+
+      <section id="self-host" class="host">
+        <div>
+          <h2>Run it on your own machine</h2>
+          <p>
+            This project is meant to be self-hosted. A public demo is convenient
+            for trying the UI; it is not a license to rip copyrighted catalogs.
+          </p>
+        </div>
+        <pre><code>git clone https://github.com/tywish-dev/OpenSourceMp3Downloader.git
+cd OpenSourceMp3Downloader
+docker build -t osmp3 .
+docker run --rm -p 10000:10000 -e PORT=10000 osmp3</code></pre>
+      </section>
+    </main>
+
+    <footer>
+      <p>
+        MIT License · © 2026 Samet Yılmaz · Use only with content you have the
+        right to download. The maintainers are not responsible for how you use
+        this software.
+      </p>
+      <p>
+        <a href="https://github.com/tywish-dev/OpenSourceMp3Downloader/blob/main/LICENSE">License</a>
+        ·
+        <a href="https://github.com/tywish-dev/OpenSourceMp3Downloader">Source</a>
+        ·
+        <a href="/health">Health</a>
+      </p>
+    </footer>
+    <script src="/static/app.js"></script>
+  </body>
+</html>
